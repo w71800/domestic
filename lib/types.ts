@@ -16,6 +16,14 @@ export const BILL_TYPE_LABELS: Record<BillType, string> = {
   other: "其他",
 };
 
+export const ACCOUNT_LABELS: Record<BillType, string> = {
+  water: "水號",
+  electricity: "電號",
+  gas: "瓦斯戶號",
+  management: "管理費戶號",
+  other: "戶號",
+};
+
 export const REMINDER_KINDS = ["d7", "d3", "d0"] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
@@ -55,4 +63,15 @@ export type Member = {
 export type BillListResponse = {
   unpaid: Bill[];
   paid: Bill[];
+};
+
+export type HouseholdAccount = {
+  household_id: string;
+  type: BillType;
+  value: string;
+  updated_at: string;
+};
+
+export type AccountListResponse = {
+  accounts: HouseholdAccount[];
 };

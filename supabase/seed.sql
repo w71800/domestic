@@ -70,3 +70,10 @@ select
 from public.households
 where name = '家裡'
 limit 1;
+
+insert into public.household_accounts (household_id, type, value)
+select id, 'gas', '12345678'
+from public.households
+where name = '家裡'
+limit 1
+on conflict do nothing;

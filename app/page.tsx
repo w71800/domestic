@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ApiError, listBillsRequest } from "@/lib/api";
 import type { BillListResponse } from "@/lib/types";
-import { AppShell, PrimaryLink } from "@/components/app-shell";
+import { AppShell, PrimaryLink, TextLink } from "@/components/app-shell";
 import { BillCard } from "@/components/bill-card";
 import { LiffGate, useLiff } from "@/components/liff-provider";
 
@@ -42,6 +42,10 @@ function BillList() {
 
   return (
     <div className="space-y-8">
+      <p className="text-sm leading-6 text-stone-600">
+        <TextLink href="/accounts">家戶資料</TextLink>
+        <span className="text-stone-500"> · 水電瓦斯戶號，繳費時可複製</span>
+      </p>
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-stone-500">未繳</h2>
         {data.unpaid.length === 0 ? (

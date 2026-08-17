@@ -41,6 +41,20 @@ export function PrimaryLink({
   );
 }
 
+export function TextLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link href={href} className="text-sm font-medium text-teal-800">
+      {children}
+    </Link>
+  );
+}
+
 export function PrimaryButton({
   children,
   disabled,

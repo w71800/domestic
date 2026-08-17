@@ -1,4 +1,4 @@
-import type { Bill, BillListResponse } from "@/lib/types";
+import type { AccountListResponse, Bill, BillListResponse } from "@/lib/types";
 
 export class ApiError extends Error {
   constructor(
@@ -57,5 +57,19 @@ export function updateBillRequest(token: string, id: string, body: unknown) {
   return apiFetch<Bill>(`/api/bills/${id}`, token, {
     method: "PATCH",
     body: JSON.stringify(body),
+  });
+}
+
+export function listAccountsRequest(token: string) {
+  return apiFetch<AccountListResponse>("/api/accounts", token);
+}
+
+export function saveAccountsRequest(
+  token: string,
+  accounts: Array<{ type: string; value: string }>,
+) {
+  return apiFetch<AccountListResponse>("/api/accounts", token, {
+    method: "PUT",
+    body: JSON.stringify({ accounts }),
   });
 }

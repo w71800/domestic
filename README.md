@@ -10,6 +10,7 @@
 2. 在 SQL Editor 依序執行：
    - `supabase/migrations/20260817120000_init.sql`
    - `supabase/migrations/20260817140000_bill_payment_url.sql`
+   - `supabase/migrations/20260817153000_household_accounts.sql`
    - `supabase/seed.sql`
 3. 複製環境變數並填入 Supabase 連線資訊：
 
