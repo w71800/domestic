@@ -10,6 +10,7 @@ import {
 } from "@/lib/env";
 import { HttpError } from "@/lib/http";
 import { BILL_TYPE_LABELS, type Bill, type ReminderKind } from "@/lib/types";
+import { isHttpUrl } from "@/lib/urls";
 
 type LineIdTokenPayload = {
   sub: string;
@@ -138,6 +139,43 @@ function reminderHeadline(bill: Bill): string {
 }
 
 function toReminderBubble(bill: Bill): FlexBubble {
+  const footerButtons: Record<string, unknown>[] = [];
+
+  if (bill.payment_url && isHttpUrl(bill.payment_url)) {
+    footerButtons.push({
+      type: "button",
+      style: "primary",
+      color: "#0f766e",
+      action: {
+        type: "uri",
+        label: "去繳費",
+        uri: bill.payment_url,
+      },
+    });
+  }
+
+  footerButtons.push(
+    {
+      type: "button",
+      style: bill.payment_url ? "secondary" : "primary",
+      color: bill.payment_url ? undefined : "#0f766e",
+      action: {
+        type: "uri",
+        label: "查看這筆",
+        uri: liffUrl(`/bills/${bill.id}`),
+      },
+    },
+    {
+      type: "button",
+      style: "secondary",
+      action: {
+        type: "uri",
+        label: "列表",
+        uri: liffUrl("/"),
+      },
+    },
+  );
+
   return {
     type: "bubble",
     body: {
@@ -177,27 +215,7 @@ function toReminderBubble(bill: Bill): FlexBubble {
       type: "box",
       layout: "vertical",
       spacing: "sm",
-      contents: [
-        {
-          type: "button",
-          style: "primary",
-          color: "#0f766e",
-          action: {
-            type: "uri",
-            label: "查看這筆",
-            uri: liffUrl(`/bills/${bill.id}`),
-          },
-        },
-        {
-          type: "button",
-          style: "secondary",
-          action: {
-            type: "uri",
-            label: "列表",
-            uri: liffUrl("/"),
-          },
-        },
-      ],
+      contents: footerButtons,
     },
   };
 }

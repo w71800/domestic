@@ -93,6 +93,7 @@ LIFF 三個畫面即可。
 - 金額（整數 TWD）
 - 繳費期限（日期）
 - 計費區間起迄（精準到月；UI 用年月，存成該月 1 號）
+- 繳費連結（選填；可手貼或在 LINE 內用相機掃 QR，只存網址）
 - 備註（選填）
 
 水電常跨兩個月，區間用起迄，不要只存一個月。
@@ -134,6 +135,7 @@ bills
   paid_date         -- date | null
   period_start      -- date, 該月 1 號
   period_end        -- date, 該月 1 號
+  payment_url       -- http(s) 繳費連結，可空
   notes
   updated_by        -- line_user_id
   created_at

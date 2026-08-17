@@ -48,6 +48,9 @@ export function BillCard({ bill }: { bill: Bill }) {
       <p className="mt-2 text-sm text-stone-600">
         期限 {formatDate(bill.due_date)} · 計費 {formatMonthRange(bill.period_start, bill.period_end)}
       </p>
+      {bill.payment_url ? (
+        <p className="mt-1 text-sm font-medium text-teal-800">含繳費連結</p>
+      ) : null}
       {bill.notes ? <p className="mt-1 truncate text-sm text-stone-500">{bill.notes}</p> : null}
     </Link>
   );

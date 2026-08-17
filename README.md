@@ -9,6 +9,7 @@
 1. 建立 [Supabase](https://supabase.com) 專案。
 2. 在 SQL Editor 依序執行：
    - `supabase/migrations/20260817120000_init.sql`
+   - `supabase/migrations/20260817140000_bill_payment_url.sql`
    - `supabase/seed.sql`
 3. 複製環境變數並填入 Supabase 連線資訊：
 
@@ -50,8 +51,9 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 1. 在 LINE Developers 建立 Messaging API channel，綁定官方帳號。
 2. 新增 LIFF App：
    - Endpoint URL：Zeabur 的 HTTPS 網址（例如 `https://your-app.zeabur.app`）
-   - Size：Tall 或 Full
+   - Size：Full（相機掃 QR 需要 Full；Tall 無法掃碼）
    - Scope：勾選 `openid`、`profile`
+   - 開啟 **Scan QR**
 3. 後台允許官方帳號加入群組，並把帳號拉進家裡群組。
 4. Webhook URL：`https://your-app.zeabur.app/api/line/webhook`，開啟 webhook。
 5. 圖文選單（只會出現在官方帳號 1:1 聊天室）兩個熱區：

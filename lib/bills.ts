@@ -8,6 +8,7 @@ import {
   type BillListResponse,
   type BillType,
 } from "@/lib/types";
+import { parsePaymentUrl } from "@/lib/urls";
 
 const PAID_LOOKBACK_DAYS = 90;
 
@@ -58,6 +59,15 @@ export function parseBillInput(body: unknown, { allowPaidDate }: { allowPaidDate
   const notes =
     typeof input.notes === "string" ? input.notes.trim().slice(0, 500) || null : null;
 
+  let paymentUrl: string | null = null;
+  if (input.payment_url !== undefined) {
+    try {
+      paymentUrl = parsePaymentUrl(input.payment_url);
+    } catch (error) {
+      throw new HttpError(400, error instanceof Error ? error.message : "繳費連結不正確");
+    }
+  }
+
   return {
     type: input.type,
     amount,
@@ -66,6 +76,7 @@ export function parseBillInput(body: unknown, { allowPaidDate }: { allowPaidDate
     period_start: input.period_start,
     period_end: input.period_end,
     notes,
+    payment_url: paymentUrl,
   };
 }
 

@@ -45,3 +45,18 @@ export async function getIdToken(): Promise<string> {
   }
   return token;
 }
+
+export async function scanQrFromCamera(): Promise<string | null> {
+  if (isClientMockAuth()) {
+    throw new Error("本機假登入無法掃碼，請在 LINE 內開啟，或手動貼上連結");
+  }
+
+  const { default: liff } = await import("@line/liff");
+  if (typeof liff.scanCodeV2 !== "function") {
+    throw new Error("這個環境不支援掃碼，請改為手動貼上連結");
+  }
+
+  const result = await liff.scanCodeV2();
+  const value = result.value?.trim();
+  return value || null;
+}
