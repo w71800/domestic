@@ -11,7 +11,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-6">
+    <div className="mx-auto min-h-screen w-full min-w-0 max-w-md overflow-x-hidden px-4 pb-10 pt-6">
       <header className="mb-5 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-medium tracking-wide text-teal-800">家戶繳費</p>

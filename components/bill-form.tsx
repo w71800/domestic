@@ -67,11 +67,11 @@ export function BillForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="min-w-0 space-y-4">
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-stone-700">類型</span>
         <select
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
           value={values.type}
           onChange={(event) =>
             setValues({ ...values, type: event.target.value as BillType })
@@ -90,7 +90,7 @@ export function BillForm({
         <input
           required
           inputMode="numeric"
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
           value={values.amount}
           onChange={(event) => setValues({ ...values, amount: event.target.value })}
         />
@@ -101,31 +101,31 @@ export function BillForm({
         <input
           required
           type="date"
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
           value={values.due_date}
           onChange={(event) => setValues({ ...values, due_date: event.target.value })}
         />
       </label>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block">
+      <div className="grid min-w-0 grid-cols-1 gap-4">
+        <label className="block min-w-0">
           <span className="mb-1 block text-sm font-medium text-stone-700">計費起</span>
           <input
             required
             type="month"
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
             value={values.period_start}
             onChange={(event) =>
               setValues({ ...values, period_start: event.target.value })
             }
           />
         </label>
-        <label className="block">
+        <label className="block min-w-0">
           <span className="mb-1 block text-sm font-medium text-stone-700">計費迄</span>
           <input
             required
             type="month"
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
             value={values.period_end}
             onChange={(event) =>
               setValues({ ...values, period_end: event.target.value })
@@ -139,7 +139,7 @@ export function BillForm({
           <span className="mb-1 block text-sm font-medium text-stone-700">繳費日期</span>
           <input
             type="date"
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+            className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
             value={values.paid_date}
             onChange={(event) => setValues({ ...values, paid_date: event.target.value })}
           />
@@ -150,7 +150,7 @@ export function BillForm({
         <span className="mb-1 block text-sm font-medium text-stone-700">備註</span>
         <textarea
           rows={3}
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
           value={values.notes}
           onChange={(event) => setValues({ ...values, notes: event.target.value })}
         />
