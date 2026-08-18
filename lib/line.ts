@@ -28,6 +28,10 @@ export type LineWebhookEvent = {
   type: string;
   replyToken?: string;
   source?: LineEventSource;
+  message?: {
+    type?: string;
+    text?: string;
+  };
 };
 
 type FlexBubble = {

@@ -2,6 +2,8 @@ import { getSupabase } from "@/lib/supabase";
 import type { LineWebhookEvent } from "@/lib/line";
 import { replyText } from "@/lib/line";
 
+const WEBHOOK_PING_KEYWORD = "ping";
+
 export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void> {
   for (const event of events) {
     try {
@@ -15,7 +17,7 @@ export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void
         if (event.replyToken) {
           await replyText(
             event.replyToken,
-            "已加入家戶繳費提醒。請用官方帳號圖文選單開啟列表或新增；到期提醒會打到這個群組。",
+            "我來提醒你們繳帳單，汪汪 🐾",
           );
         }
         continue;
@@ -24,10 +26,22 @@ export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void
       if (event.source?.type === "group" && event.source.groupId) {
         await bindGroupId(event.source.groupId);
       }
+
+      if (isWebhookPing(event) && event.replyToken) {
+        await replyText(event.replyToken, "pong 汪汪，webhook 有接到 🐾");
+      }
     } catch (error) {
       console.error("處理 LINE webhook 事件失敗", event.type, error);
     }
   }
+}
+
+function isWebhookPing(event: LineWebhookEvent): boolean {
+  return (
+    event.type === "message" &&
+    event.message?.type === "text" &&
+    event.message.text?.trim().toLowerCase() === WEBHOOK_PING_KEYWORD
+  );
 }
 
 async function recordFollow(lineUserId: string): Promise<void> {
