@@ -1,8 +1,9 @@
 import { getSupabase } from "@/lib/supabase";
 import type { LineWebhookEvent } from "@/lib/line";
-import { replyText } from "@/lib/line";
+import { replyBillsMenu, replyText } from "@/lib/line";
 
 const WEBHOOK_PING_KEYWORD = "ping";
+const BILLS_MENU_KEYWORD = ";帳單";
 
 export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void> {
   for (const event of events) {
@@ -27,6 +28,11 @@ export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void
         await bindGroupId(event.source.groupId);
       }
 
+      if (isBillsMenuCommand(event) && event.replyToken) {
+        await replyBillsMenu(event.replyToken);
+        continue;
+      }
+
       if (isWebhookPing(event) && event.replyToken) {
         await replyText(event.replyToken, "pong 汪汪，webhook 有接到 🐾");
       }
@@ -41,6 +47,14 @@ function isWebhookPing(event: LineWebhookEvent): boolean {
     event.type === "message" &&
     event.message?.type === "text" &&
     event.message.text?.trim().toLowerCase() === WEBHOOK_PING_KEYWORD
+  );
+}
+
+function isBillsMenuCommand(event: LineWebhookEvent): boolean {
+  return (
+    event.type === "message" &&
+    event.message?.type === "text" &&
+    event.message.text?.trim() === BILLS_MENU_KEYWORD
   );
 }
 

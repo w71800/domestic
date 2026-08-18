@@ -102,6 +102,19 @@ export async function replyText(replyToken: string, text: string): Promise<void>
   });
 }
 
+export async function replyBillsMenu(replyToken: string): Promise<void> {
+  await lineFetch("/v2/bot/message/reply", {
+    replyToken,
+    messages: [
+      {
+        type: "flex",
+        altText: "帳單：查看列表或新增",
+        contents: toBillsMenuBubble(),
+      },
+    ],
+  });
+}
+
 export async function pushFlexToGroup(groupId: string, bills: Bill[]): Promise<void> {
   if (bills.length === 0) {
     return;
@@ -140,6 +153,58 @@ function reminderHeadline(bill: Bill): string {
     return "7 天後到期";
   }
   return "繳費提醒";
+}
+
+function toBillsMenuBubble(): FlexBubble {
+  return {
+    type: "bubble",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: "帳單",
+          weight: "bold",
+          size: "xl",
+        },
+        {
+          type: "text",
+          text: "要查看列表，還是新增一筆？",
+          size: "sm",
+          color: "#666666",
+          wrap: true,
+          margin: "md",
+        },
+      ],
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#0f766e",
+          action: {
+            type: "uri",
+            label: "查看帳單列表",
+            uri: liffUrl("/"),
+          },
+        },
+        {
+          type: "button",
+          style: "secondary",
+          action: {
+            type: "uri",
+            label: "新增帳單",
+            uri: liffUrl("/new"),
+          },
+        },
+      ],
+    },
+  };
 }
 
 function toReminderBubble(bill: Bill): FlexBubble {
