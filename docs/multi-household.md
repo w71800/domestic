@@ -27,7 +27,7 @@
 | 現有資料 | seed／已在用的「家裡」= 第一個已開通家戶 |
 | 入籍 | 在已開通的群呼叫或從該群開 LIFF，寫入 `household_members` |
 | 手貼 SQL 白名單 | 退場。表留下，改由程式 upsert |
-| `groupId` | 一般使用者不必知道。後端信「已驗證 ID Token + 當下群組的 groupId」 |
+| `groupId` | 一般使用者不必知道。開通靠 webhook；LIFF 用 `householdId` |
 | 離群 | 解綁群，**不刪**家戶與帳單 |
 | 訂閱 | 以後掛在家戶上，這版不做 |
 | 後台管理員開通 | 以後可把「建戶」從指令改成後台；這版用指令 |
@@ -53,7 +53,7 @@
 
 群組沒有圖文選單。不要把假選單反覆 push 進群。入口就是：進群歡迎詞一次、指令回 Flex、到期提醒 Flex。可請家人把歡迎或選單訊息置頂。
 
-LIFF 必須從群組訊息打開，才有 `liff.getContext().groupId`。複製 `liff.line.me` 到外部瀏覽器、或殘留的 1:1 圖文選單，沒有群組 context → 帳單 API 拒絕，畫面請回群組開啟。
+LIFF 必須從群組訊息的 Flex 打開。LINE 自 2023 年起不再把 `groupId` 給 `liff.getContext()`，因此選單與提醒連結自行帶 `?h={householdId}`。沒有這個參數（外部瀏覽器、舊訊息、1:1）→ 拒絕，畫面請回群組打「呼叫狗狗」。
 
 ## 5. 指令「呼叫狗狗」
 
@@ -108,7 +108,7 @@ Migration 已插入一戶名為「家裡」。帳單、戶號、成員都掛在�
 入籍時機（已開通的群）：
 
 1. 群裡「呼叫狗狗」（webhook 有 `groupId` + `userId`）→ upsert
-2. 從該群打開 LIFF → 後端用 ID Token 的 `sub` + LIFF 帶來的 `groupId` 對上家戶 → upsert
+2. 從該群 Flex 打開 LIFF → 後端用 ID Token 的 `sub` + `?h=` 的家戶 id 對上家戶 → upsert
 
 權限這版不做角色：入籍者都能看／改該戶帳單與戶號。
 
@@ -128,20 +128,20 @@ household_members_line_user_id_idx  -- unique (line_user_id)
 
 單戶時 `requireMember` 用 `line_user_id` + `maybeSingle()` 推唯一家戶。多家戶會有多列，`maybeSingle()` 會失敗。
 
-這版產品只從群組開，**當前戶 = 這個 groupId 對應的家戶**，不必做 1:1 切換。
+這版產品只從群組開，**當前戶 = Flex 連結上的 `householdId`**，不必做 1:1 切換。
 
 建議流程：
 
 1. 驗證 ID Token → `line_user_id`
-2. 請求需帶群組 context（例如 header `X-Line-Group-Id`，值來自 `liff.getContext().groupId`）
-3. 用 `groupId` 找 `households`；找不到 → 403，請在群裡先呼叫狗狗開通
+2. Flex／提醒連結帶 `?h={householdId}`；前端存 `sessionStorage`，請求帶 header `X-Household-Id`
+3. 用 id 找 `households`；找不到 → 403，請在群裡先呼叫狗狗開通
 4. upsert／確認 `household_members` 後，以該 `household_id` 做 CRUD
 
-不要只信前端傳來的 `householdId` uuid。這版連這個參數都可以不傳，避免選錯戶。`groupId` 由 LINE 在群組 LIFF 填入；家戶繳費場景下一般人拿不到別人的 groupId，先不額外打「查群成員」API。
+不要只信前端傳來的 uuid：必須是真實家戶，再寫入／核對成員。LINE 已不在 LIFF 提供 `groupId`，不要再用 `liff.getContext().groupId`。
 
-`/api/bills/[id]`：帳單已有 `household_id`，仍須確認呼叫者是該戶成員，且（若有帶 groupId）該群就是這戶。對不上 → 404 或 403。
+`/api/bills/[id]`：帳單已有 `household_id`，仍須確認呼叫者是該戶成員（由 header 的家戶決定範圍）。對不上 → 404。
 
-沒有 group context（外部瀏覽器、1:1）：不要列出所有家戶給他選，直接拒絕。
+沒有 `h` 參數（外部瀏覽器、1:1、舊 Flex）：不要列出所有家戶給他選，直接拒絕。請再打一次「呼叫狗狗」。
 
 ## 9. Webhook
 
@@ -165,7 +165,7 @@ household_members_line_user_id_idx  -- unique (line_user_id)
 `lib/reminders.ts` 已依帳單的 `household_id` 找該戶 `line_group_id` 再分群 push，多家戶幾乎不用改租戶邊界。確認：
 
 - 未綁群或已解綁 → 略過，不要重試到打光額度
-- Flex「查看這筆」「列表」「新增」仍用同一個 LIFF URL；在**群組訊息**上點擊才帶 group context
+- Flex「查看這筆」「列表」「新增」的 LIFF URL 帶 `?h={householdId}`；點進 App 後以這個家戶為準
 
 額度仍按群內收得到的人數計。家戶變多會線性增加；節點維持到期前 7 / 3 / 0 各一次。
 
@@ -184,9 +184,9 @@ household_members_line_user_id_idx  -- unique (line_user_id)
 | --- | --- | --- |
 | `lib/webhook.ts` `bindGroupId` | 永遠綁最早一戶；join 與每則群訊息都跑 | 刪除或改為第 6 節開通，只在「呼叫狗狗」呼叫 |
 | `BILLS_MENU_KEYWORD` | `;帳單` | `呼叫狗狗`（加別名與 mention 處理） |
-| `requireMember` | `maybeSingle()` 一人一戶 | 用 groupId 找戶 + 確認／upsert 成員 |
-| `lib/api.ts` | 只帶 Bearer | 帶群組 context |
-| LIFF 前端 | 不讀 `getContext()` | 從群組讀 `groupId`；沒有就顯示請回群組 |
+| `requireMember` | `maybeSingle()` 一人一戶 | 用 `X-Household-Id` 找戶 + 確認／upsert 成員 |
+| `lib/api.ts` | 只帶 Bearer | 帶 `h` 對應的家戶 header |
+| LIFF 前端 | 不讀 `getContext()` | 從 URL `?h=` 讀 householdId；沒有就顯示請回群組 |
 | 403 畫面 | 秀 userId 請手貼 SQL | 未開通：請在群裡呼叫狗狗；非成員／錯群：你不是這戶的人 |
 | LINE 後台圖文選單 | 規劃接列表／新增 | 拿掉或改成客服說明 |
 
@@ -202,7 +202,7 @@ household_members_line_user_id_idx  -- unique (line_user_id)
 
 1. Migration：刪 `line_user_id` 全域 unique。確認現有「家裡」那一筆保留。
 2. Webhook：`join` 只歡迎；拿掉隨訊息 bind；「呼叫狗狗」實作第 6 節三條分岔 + 入籍；`leave` 解綁；1:1 導引。
-3. `requireMember` + LIFF 帶 `groupId`；無 context 拒絕。
+3. `requireMember` + LIFF 帶 `householdId`（`?h=`）；沒有參數則拒絕。
 4. 403／未開通文案；拿掉手貼 SQL 的說明（README 一併改）。
 5. 用第二個測試群走一次：第一次呼叫 → 新戶、資料不與「家裡」串在一起；自己兩個群都能開各自 LIFF。
 

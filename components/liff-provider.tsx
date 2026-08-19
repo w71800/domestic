@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { ApiError } from "@/lib/api";
-import { getIdToken, getLineGroupId, initLiff, isClientMockAuth } from "@/lib/liff";
+import { getIdToken, getHouseholdId, initLiff, isClientMockAuth } from "@/lib/liff";
 
 type LiffStatus = "loading" | "ready" | "blocked" | "error";
 
@@ -25,7 +25,7 @@ type LiffContextValue = {
 const LiffContext = createContext<LiffContextValue | null>(null);
 
 function titleForCode(code?: string): string {
-  if (code === "missing_group") {
+  if (code === "missing_household") {
     return "請從家戶群組開啟";
   }
   if (code === "not_activated") {
@@ -48,8 +48,8 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           return;
         }
         if (!isClientMockAuth()) {
-          const groupId = await getLineGroupId();
-          if (!groupId) {
+          const householdId = getHouseholdId();
+          if (!householdId) {
             setStatus("blocked");
             setBlockedTitle("請從家戶群組開啟");
             setErrorMessage("請在家戶群組打「呼叫狗狗」，再從選單或提醒訊息進入。");

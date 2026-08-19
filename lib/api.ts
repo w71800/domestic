@@ -1,5 +1,5 @@
-import { LINE_GROUP_ID_HEADER } from "@/lib/group-context";
-import { getLineGroupId, isClientMockAuth } from "@/lib/liff";
+import { HOUSEHOLD_ID_HEADER } from "@/lib/household-context";
+import { getHouseholdId, isClientMockAuth } from "@/lib/liff";
 import type { AccountListResponse, Bill, BillListResponse } from "@/lib/types";
 
 export class ApiError extends Error {
@@ -25,9 +25,9 @@ async function apiFetch<T>(
   }
 
   if (!isClientMockAuth()) {
-    const groupId = await getLineGroupId();
-    if (groupId) {
-      headers.set(LINE_GROUP_ID_HEADER, groupId);
+    const householdId = getHouseholdId();
+    if (householdId) {
+      headers.set(HOUSEHOLD_ID_HEADER, householdId);
     }
   }
 

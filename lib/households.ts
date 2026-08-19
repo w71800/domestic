@@ -45,6 +45,20 @@ export async function findHouseholdByGroupId(groupId: string): Promise<Household
   return previous ? asHousehold(previous as HouseholdRow) : null;
 }
 
+export async function findHouseholdById(householdId: string): Promise<HouseholdRow | null> {
+  const { data, error } = await getSupabase()
+    .from("households")
+    .select("id, name, line_group_id, last_line_group_id, unbound_at")
+    .eq("id", householdId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ? asHousehold(data as HouseholdRow) : null;
+}
+
 export async function upsertHouseholdMember(
   householdId: string,
   lineUserId: string,

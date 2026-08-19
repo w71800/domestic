@@ -45,11 +45,13 @@ export function getCronSecret(): string {
   return required("CRON_SECRET");
 }
 
-export function liffUrl(path = "/"): string {
+export function liffUrl(path = "/", householdId?: string): string {
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-  if (!liffId) {
-    return path;
-  }
   const suffix = path === "/" ? "" : path.startsWith("/") ? path : `/${path}`;
-  return `https://liff.line.me/${liffId}${suffix}`;
+  const base = liffId ? `https://liff.line.me/${liffId}${suffix}` : path;
+  if (!householdId) {
+    return base;
+  }
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}h=${encodeURIComponent(householdId)}`;
 }

@@ -39,9 +39,12 @@ export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void
 
       if (isCallCommand(event)) {
         if (event.source?.type === "group" && event.source.groupId) {
-          await activateGroup(event.source.groupId, event.source.userId ?? null);
+          const household = await activateGroup(
+            event.source.groupId,
+            event.source.userId ?? null,
+          );
           if (event.replyToken) {
-            await replyBillsMenu(event.replyToken);
+            await replyBillsMenu(event.replyToken, household.id);
           }
           continue;
         }

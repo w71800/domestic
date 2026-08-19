@@ -133,14 +133,14 @@ export async function replyText(replyToken: string, text: string): Promise<void>
   });
 }
 
-export async function replyBillsMenu(replyToken: string): Promise<void> {
+export async function replyBillsMenu(replyToken: string, householdId: string): Promise<void> {
   await lineFetch("/v2/bot/message/reply", {
     replyToken,
     messages: [
       {
         type: "flex",
         altText: "帳單：查看列表或新增",
-        contents: toBillsMenuBubble(),
+        contents: toBillsMenuBubble(householdId),
       },
     ],
   });
@@ -186,7 +186,7 @@ function reminderHeadline(bill: Bill): string {
   return "繳費提醒";
 }
 
-function toBillsMenuBubble(): FlexBubble {
+function toBillsMenuBubble(householdId: string): FlexBubble {
   return {
     type: "bubble",
     body: {
@@ -221,7 +221,7 @@ function toBillsMenuBubble(): FlexBubble {
           action: {
             type: "uri",
             label: "查看帳單列表",
-            uri: liffUrl("/"),
+            uri: liffUrl("/", householdId),
           },
         },
         {
@@ -230,7 +230,7 @@ function toBillsMenuBubble(): FlexBubble {
           action: {
             type: "uri",
             label: "新增帳單",
-            uri: liffUrl("/new"),
+            uri: liffUrl("/new", householdId),
           },
         },
       ],
@@ -262,7 +262,7 @@ function toReminderBubble(bill: Bill): FlexBubble {
       action: {
         type: "uri",
         label: "查看這筆",
-        uri: liffUrl(`/bills/${bill.id}`),
+        uri: liffUrl(`/bills/${bill.id}`, bill.household_id),
       },
     },
     {
@@ -271,7 +271,7 @@ function toReminderBubble(bill: Bill): FlexBubble {
       action: {
         type: "uri",
         label: "列表",
-        uri: liffUrl("/"),
+        uri: liffUrl("/", bill.household_id),
       },
     },
   );

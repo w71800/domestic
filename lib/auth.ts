@@ -1,10 +1,13 @@
 import { isMockAuthEnabled } from "@/lib/env";
-import { LINE_GROUP_ID_HEADER } from "@/lib/group-context";
-import { findHouseholdByGroupId, upsertHouseholdMember } from "@/lib/households";
+import { HOUSEHOLD_ID_HEADER } from "@/lib/household-context";
+import { findHouseholdById, upsertHouseholdMember } from "@/lib/households";
 import { HttpError } from "@/lib/http";
 import { verifyLineIdToken } from "@/lib/line";
 import { getSupabase } from "@/lib/supabase";
 import type { Member } from "@/lib/types";
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function bearerToken(request: Request): string | null {
   const header = request.headers.get("authorization");
@@ -14,12 +17,9 @@ function bearerToken(request: Request): string | null {
   return header.slice("Bearer ".length).trim() || null;
 }
 
-function parseGroupId(request: Request): string | null {
-  const raw = request.headers.get(LINE_GROUP_ID_HEADER)?.trim() ?? "";
-  if (!raw) {
-    return null;
-  }
-  if (!/^C[a-zA-Z0-9]{8,64}$/.test(raw)) {
+function parseHouseholdId(request: Request): string | null {
+  const raw = request.headers.get(HOUSEHOLD_ID_HEADER)?.trim() ?? "";
+  if (!raw || !UUID_PATTERN.test(raw)) {
     return null;
   }
   return raw;
@@ -32,18 +32,18 @@ export async function requireMember(request: Request): Promise<Member> {
   }
 
   const identity = await verifyLineIdToken(token);
-  const groupId = parseGroupId(request);
+  const householdId = parseHouseholdId(request);
 
-  if (!groupId) {
+  if (!householdId) {
     if (isMockAuthEnabled()) {
       return requireMockMember(identity.sub, identity.name ?? null);
     }
     throw new HttpError(403, "請從家戶群組開啟狗狗管家", {
-      code: "missing_group",
+      code: "missing_household",
     });
   }
 
-  const household = await findHouseholdByGroupId(groupId);
+  const household = await findHouseholdById(householdId);
   if (!household) {
     throw new HttpError(403, "請在這個群打「呼叫狗狗」開通家戶", {
       code: "not_activated",
