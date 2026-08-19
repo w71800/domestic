@@ -1,9 +1,12 @@
+import { LINE_GROUP_ID_HEADER } from "@/lib/group-context";
+import { getLineGroupId, isClientMockAuth } from "@/lib/liff";
 import type { AccountListResponse, Bill, BillListResponse } from "@/lib/types";
 
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public code?: string,
     public lineUserId?: string,
   ) {
     super(message);
@@ -21,9 +24,17 @@ async function apiFetch<T>(
     headers.set("Content-Type", "application/json");
   }
 
+  if (!isClientMockAuth()) {
+    const groupId = await getLineGroupId();
+    if (groupId) {
+      headers.set(LINE_GROUP_ID_HEADER, groupId);
+    }
+  }
+
   const response = await fetch(path, { ...init, headers });
   const data = (await response.json().catch(() => ({}))) as {
     error?: string;
+    code?: string;
     lineUserId?: string;
   };
 
@@ -31,6 +42,7 @@ async function apiFetch<T>(
     throw new ApiError(
       response.status,
       data.error ?? "請求失敗",
+      data.code,
       data.lineUserId,
     );
   }

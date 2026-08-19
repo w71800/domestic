@@ -25,9 +25,6 @@ create table public.household_members (
   primary key (household_id, line_user_id)
 );
 
-create unique index household_members_line_user_id_idx
-  on public.household_members (line_user_id);
-
 create table public.bills (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households (id) on delete cascade,

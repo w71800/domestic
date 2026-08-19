@@ -46,6 +46,19 @@ export async function getIdToken(): Promise<string> {
   return token;
 }
 
+export async function getLineGroupId(): Promise<string | null> {
+  if (isClientMockAuth()) {
+    return null;
+  }
+
+  const { default: liff } = await import("@line/liff");
+  const context = liff.getContext();
+  if (context?.type === "group" && context.groupId) {
+    return context.groupId;
+  }
+  return null;
+}
+
 export async function scanQrFromCamera(): Promise<string | null> {
   if (isClientMockAuth()) {
     throw new Error("本機假登入無法掃碼，請在 LINE 內開啟，或手動貼上連結");

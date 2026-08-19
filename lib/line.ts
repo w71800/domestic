@@ -31,6 +31,14 @@ export type LineWebhookEvent = {
   message?: {
     type?: string;
     text?: string;
+    mention?: {
+      mentionees?: Array<{
+        index?: number;
+        length?: number;
+        userId?: string;
+        type?: string;
+      }>;
+    };
   };
 };
 
@@ -77,6 +85,29 @@ export function verifyLineWebhookSignature(rawBody: string, signature: string | 
   const actual = Buffer.from(signature);
 
   return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+export async function getGroupSummary(
+  groupId: string,
+): Promise<{ groupName: string } | null> {
+  try {
+    const response = await fetch(
+      `https://api.line.me/v2/bot/group/${encodeURIComponent(groupId)}/summary`,
+      {
+        headers: {
+          Authorization: `Bearer ${getLineChannelAccessToken()}`,
+        },
+      },
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const payload = (await response.json()) as { groupName?: string };
+    const groupName = payload.groupName?.trim();
+    return groupName ? { groupName } : null;
+  } catch {
+    return null;
+  }
 }
 
 async function lineFetch(path: string, body: unknown): Promise<void> {

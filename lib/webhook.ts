@@ -1,35 +1,53 @@
-import { getSupabase } from "@/lib/supabase";
+import { activateGroup, unbindGroup } from "@/lib/households";
 import type { LineWebhookEvent } from "@/lib/line";
 import { replyBillsMenu, replyText } from "@/lib/line";
+import { getSupabase } from "@/lib/supabase";
 
 const WEBHOOK_PING_KEYWORD = "ping";
-const BILLS_MENU_KEYWORD = ";帳單";
+const CALL_COMMANDS = new Set(["呼叫狗狗", "呼叫狗狗管家"]);
+
+const JOIN_WELCOME =
+  "在這個群打「呼叫狗狗」就可以開通家戶。之後要記帳單或看列表，也是打這句，汪汪 🐾";
+const FOLLOW_GUIDE =
+  "記帳單請把我拉進家裡的群組，在群裡打「呼叫狗狗」。這裡是客服用的，汪汪 🐾";
+const DM_GUIDE = "請到家戶群組打「呼叫狗狗」。這裡是客服用的，汪汪 🐾";
 
 export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void> {
   for (const event of events) {
     try {
-      if (event.type === "follow" && event.source?.userId) {
-        await recordFollow(event.source.userId);
-        continue;
-      }
-
-      if (event.type === "join" && event.source?.groupId) {
-        await bindGroupId(event.source.groupId);
+      if (event.type === "follow") {
+        if (event.source?.userId) {
+          await recordFollow(event.source.userId);
+        }
         if (event.replyToken) {
-          await replyText(
-            event.replyToken,
-            "我來提醒你們繳帳單，汪汪 🐾",
-          );
+          await replyText(event.replyToken, FOLLOW_GUIDE);
         }
         continue;
       }
 
-      if (event.source?.type === "group" && event.source.groupId) {
-        await bindGroupId(event.source.groupId);
+      if (event.type === "join" && event.source?.groupId) {
+        if (event.replyToken) {
+          await replyText(event.replyToken, JOIN_WELCOME);
+        }
+        continue;
       }
 
-      if (isBillsMenuCommand(event) && event.replyToken) {
-        await replyBillsMenu(event.replyToken);
+      if (event.type === "leave" && event.source?.groupId) {
+        await unbindGroup(event.source.groupId);
+        continue;
+      }
+
+      if (isCallCommand(event)) {
+        if (event.source?.type === "group" && event.source.groupId) {
+          await activateGroup(event.source.groupId, event.source.userId ?? null);
+          if (event.replyToken) {
+            await replyBillsMenu(event.replyToken);
+          }
+          continue;
+        }
+        if (event.replyToken) {
+          await replyText(event.replyToken, DM_GUIDE);
+        }
         continue;
       }
 
@@ -50,12 +68,30 @@ function isWebhookPing(event: LineWebhookEvent): boolean {
   );
 }
 
-function isBillsMenuCommand(event: LineWebhookEvent): boolean {
-  return (
-    event.type === "message" &&
-    event.message?.type === "text" &&
-    event.message.text?.trim() === BILLS_MENU_KEYWORD
+function isCallCommand(event: LineWebhookEvent): boolean {
+  if (event.type !== "message" || event.message?.type !== "text") {
+    return false;
+  }
+  return CALL_COMMANDS.has(normalizeCommandText(event));
+}
+
+function normalizeCommandText(event: LineWebhookEvent): string {
+  let text = event.message?.text ?? "";
+  const mentionees = [...(event.message?.mention?.mentionees ?? [])].sort(
+    (a, b) => (b.index ?? 0) - (a.index ?? 0),
   );
+
+  for (const mention of mentionees) {
+    if (typeof mention.index !== "number" || typeof mention.length !== "number") {
+      continue;
+    }
+    text = `${text.slice(0, mention.index)}${text.slice(mention.index + mention.length)}`;
+  }
+
+  return text
+    .replace(/^@\S+\s+/u, "")
+    .replace(/\u3000/g, " ")
+    .trim();
 }
 
 async function recordFollow(lineUserId: string): Promise<void> {
@@ -64,39 +100,5 @@ async function recordFollow(lineUserId: string): Promise<void> {
   });
   if (error) {
     throw new Error(error.message);
-  }
-}
-
-async function bindGroupId(groupId: string): Promise<void> {
-  const supabase = getSupabase();
-  const { data: household, error } = await supabase
-    .from("households")
-    .select("id, line_group_id")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  if (!household) {
-    return;
-  }
-  if (household.line_group_id && household.line_group_id !== groupId) {
-    console.warn("家戶已綁定其他群組，略過", household.line_group_id, groupId);
-    return;
-  }
-  if (household.line_group_id === groupId) {
-    return;
-  }
-
-  const { error: updateError } = await supabase
-    .from("households")
-    .update({ line_group_id: groupId })
-    .eq("id", household.id)
-    .is("line_group_id", null);
-
-  if (updateError) {
-    throw new Error(updateError.message);
   }
 }

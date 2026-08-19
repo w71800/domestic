@@ -10,33 +10,53 @@ import {
   type ReactNode,
 } from "react";
 import { ApiError } from "@/lib/api";
-import { getIdToken, initLiff, isClientMockAuth } from "@/lib/liff";
+import { getIdToken, getLineGroupId, initLiff, isClientMockAuth } from "@/lib/liff";
 
-type LiffStatus = "loading" | "ready" | "error";
+type LiffStatus = "loading" | "ready" | "blocked" | "error";
 
 type LiffContextValue = {
   status: LiffStatus;
   errorMessage: string | null;
-  unauthorizedUserId: string | null;
+  blockedTitle: string | null;
   getToken: () => Promise<string>;
   run: <T>(fn: (token: string) => Promise<T>) => Promise<T>;
 };
 
 const LiffContext = createContext<LiffContextValue | null>(null);
 
+function titleForCode(code?: string): string {
+  if (code === "missing_group") {
+    return "請從家戶群組開啟";
+  }
+  if (code === "not_activated") {
+    return "這個群還沒開通";
+  }
+  return "無法使用";
+}
+
 export function LiffProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<LiffStatus>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [unauthorizedUserId, setUnauthorizedUserId] = useState<string | null>(null);
+  const [blockedTitle, setBlockedTitle] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     initLiff()
-      .then(() => {
-        if (!cancelled) {
-          setStatus("ready");
+      .then(async () => {
+        if (cancelled) {
+          return;
         }
+        if (!isClientMockAuth()) {
+          const groupId = await getLineGroupId();
+          if (!groupId) {
+            setStatus("blocked");
+            setBlockedTitle("請從家戶群組開啟");
+            setErrorMessage("請在家戶群組打「呼叫狗狗」，再從選單或提醒訊息進入。");
+            return;
+          }
+        }
+        setStatus("ready");
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -59,7 +79,8 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         return await fn(token);
       } catch (error) {
         if (error instanceof ApiError && error.status === 403) {
-          setUnauthorizedUserId(error.lineUserId ?? null);
+          setStatus("blocked");
+          setBlockedTitle(titleForCode(error.code));
           setErrorMessage(error.message);
         }
         throw error;
@@ -69,8 +90,8 @@ export function LiffProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ status, errorMessage, unauthorizedUserId, getToken, run }),
-    [status, errorMessage, unauthorizedUserId, getToken, run],
+    () => ({ status, errorMessage, blockedTitle, getToken, run }),
+    [status, errorMessage, blockedTitle, getToken, run],
   );
 
   return <LiffContext.Provider value={value}>{children}</LiffContext.Provider>;
@@ -85,22 +106,18 @@ export function useLiff(): LiffContextValue {
 }
 
 export function LiffGate({ children }: { children: ReactNode }) {
-  const { status, errorMessage, unauthorizedUserId } = useLiff();
+  const { status, errorMessage, blockedTitle } = useLiff();
 
   if (status === "loading") {
     return <CenteredMessage title="載入中" body="正在連接 LINE…" />;
   }
 
-  if (unauthorizedUserId) {
+  if (status === "blocked") {
     return (
       <CenteredMessage
-        title="尚未加入家戶"
-        body="把下面的 LINE userId 加進 household_members 後再重新開啟。"
-      >
-        <code className="mt-4 block break-all rounded-xl bg-stone-200 px-3 py-2 text-sm">
-          {unauthorizedUserId}
-        </code>
-      </CenteredMessage>
+        title={blockedTitle ?? "無法使用"}
+        body={errorMessage ?? "請從家戶群組開啟狗狗管家。"}
+      />
     );
   }
 

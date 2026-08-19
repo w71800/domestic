@@ -1,4 +1,4 @@
--- 本機開發用假成員。正式環境請改成家人的 LINE userId（可從 LIFF 未授權畫面或 line_follows 取得）。
+-- 本機開發用假成員。正式環境由群組「呼叫狗狗」或從該群開 LIFF 寫入 household_members。
 insert into public.household_members (household_id, line_user_id, display_name)
 select id, 'U-dev-local', '本機開發'
 from public.households

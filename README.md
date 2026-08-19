@@ -1,8 +1,8 @@
 # 家戶繳費單
 
-家人在 LINE 裡查看、新增、編輯繳費單；到期前 7 天、3 天、當天各提醒一次，打到家裡群組。
+家人在 LINE **家戶群組**裡查看、新增、編輯繳費單；到期前 7 天、3 天、當天各提醒一次，打到該戶群組。
 
-規劃細節見 [docs/implementation-plan.md](docs/implementation-plan.md)。
+同一支官方帳號（狗狗管家）可以接入多個家戶群組。規劃見 [docs/implementation-plan.md](docs/implementation-plan.md)，多家戶見 [docs/multi-household.md](docs/multi-household.md)。
 
 ## 本機先跑起來（瀏覽器、假登入）
 
@@ -11,6 +11,7 @@
    - `supabase/migrations/20260817120000_init.sql`
    - `supabase/migrations/20260817140000_bill_payment_url.sql`
    - `supabase/migrations/20260817153000_household_accounts.sql`
+   - `supabase/migrations/20260819100000_multi_household.sql`
    - `supabase/seed.sql`
 3. 複製環境變數並填入 Supabase 連線資訊：
 
@@ -28,6 +29,8 @@ npm run dev
 ```
 
 開啟 [http://localhost:3000](http://localhost:3000)。本機預設用 `U-dev-local` 這位 seed 成員，不需要 LINE。本機預設**不會**跑到期排程。
+
+已上線的資料庫請補跑 `20260819100000_multi_household.sql`（刪除一人一戶的 unique、加上解綁欄位）。
 
 ## 部署到 Zeabur
 
@@ -55,20 +58,10 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
    - Size：Full（相機掃 QR 需要 Full；Tall 無法掃碼）
    - Scope：勾選 `openid`、`profile`
    - 開啟 **Scan QR**
-3. 後台允許官方帳號加入群組，並把帳號拉進家裡群組。
+3. 後台允許官方帳號加入群組，並把帳號拉進家戶群組。
 4. Webhook URL：`https://your-app.zeabur.app/api/line/webhook`，開啟 webhook。
-5. 圖文選單（只會出現在官方帳號 1:1 聊天室）兩個熱區：
-   - 列表 → `https://liff.line.me/{LIFF_ID}`
-   - 新增 → `https://liff.line.me/{LIFF_ID}/new`
+5. **不要**把圖文選單接到帳單列表／新增。1:1 只做客服導引。
 6. 把 Zeabur 環境變數補齊，確認沒有開 mock 登入。
-7. 家人加官方帳號為好友並開啟一次 LIFF。未在白名單會看到自己的 LINE userId，把該 ID 插入 `household_members`：
+7. 在家戶群組打 **「呼叫狗狗」** 開通該戶（現有「家裡」資料會成為第一戶）。之後同一句會回列表／新增選單。從選單或提醒 Flex 打開 LIFF 的人會自動成為該戶成員。
 
-```sql
-insert into household_members (household_id, line_user_id, display_name)
-select id, 'Uxxxxxxxx', '家人名字'
-from households
-where name = '家裡'
-limit 1;
-```
-
-加好友也會寫入 `line_follows`，可當對照。官方帳號進群後會把 `households.line_group_id` 填上；提醒是 push 到這個群組。
+加好友會寫入 `line_follows`，並在 1:1 回覆請到群組使用。提醒是 push 到該戶綁定的群組。
