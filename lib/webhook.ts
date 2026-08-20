@@ -9,7 +9,7 @@ const CALL_COMMANDS = new Set(["呼叫狗狗", "呼叫狗狗管家"]);
 const JOIN_WELCOME =
   "在這個群打「呼叫狗狗」就可以開通家戶。之後要記帳單或看列表，也是打這句，汪汪 🐾";
 const FOLLOW_GUIDE =
-  "記帳單請把我拉進家裡的群組，在群裡打「呼叫狗狗」。這裡是客服用的，汪汪 🐾";
+  "記帳單請把我拉進家裡的群組。這裡是客服用的，汪汪 🐾";
 const DM_GUIDE = "請到家戶群組打「呼叫狗狗」。這裡是客服用的，汪汪 🐾";
 
 export async function handleLineEvents(events: LineWebhookEvent[]): Promise<void> {
