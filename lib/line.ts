@@ -216,8 +216,7 @@ function toBillsMenuBubble(householdId: string): FlexBubble {
       contents: [
         {
           type: "button",
-          style: "primary",
-          color: "#0f766e",
+          style: "secondary",
           action: {
             type: "uri",
             label: "查看帳單列表",
@@ -226,7 +225,8 @@ function toBillsMenuBubble(householdId: string): FlexBubble {
         },
         {
           type: "button",
-          style: "secondary",
+          style: "primary",
+          color: "#0f766e",
           action: {
             type: "uri",
             label: "新增帳單",
@@ -239,9 +239,10 @@ function toBillsMenuBubble(householdId: string): FlexBubble {
 }
 
 function toReminderBubble(bill: Bill): FlexBubble {
+  const hasPayUrl = Boolean(bill.payment_url && isHttpUrl(bill.payment_url));
   const footerButtons: Record<string, unknown>[] = [];
 
-  if (bill.payment_url && isHttpUrl(bill.payment_url)) {
+  if (hasPayUrl) {
     footerButtons.push({
       type: "button",
       style: "primary",
@@ -249,7 +250,7 @@ function toReminderBubble(bill: Bill): FlexBubble {
       action: {
         type: "uri",
         label: "去繳費",
-        uri: bill.payment_url,
+        uri: bill.payment_url!,
       },
     });
   }
@@ -257,8 +258,8 @@ function toReminderBubble(bill: Bill): FlexBubble {
   footerButtons.push(
     {
       type: "button",
-      style: bill.payment_url ? "secondary" : "primary",
-      color: bill.payment_url ? undefined : "#0f766e",
+      style: hasPayUrl ? "secondary" : "primary",
+      color: hasPayUrl ? undefined : "#0f766e",
       action: {
         type: "uri",
         label: "查看這筆",
