@@ -262,15 +262,6 @@ function toReminderBubble(bill: Bill): FlexBubble {
       color: hasPayUrl ? undefined : "#0f766e",
       action: {
         type: "uri",
-        label: "新增帳單",
-        uri: liffUrl("/new", bill.household_id),
-      },
-    },
-    {
-      type: "button",
-      style: "secondary",
-      action: {
-        type: "uri",
         label: "查看這筆",
         uri: liffUrl(`/bills/${bill.id}`, bill.household_id),
       },

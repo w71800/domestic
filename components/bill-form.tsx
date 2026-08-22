@@ -34,6 +34,10 @@ function monthSelectYears(): number[] {
   return years;
 }
 
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
 function MonthSelect({
   value,
   onChange,
@@ -82,6 +86,94 @@ function MonthSelect({
             </option>
           );
         })}
+      </select>
+    </div>
+  );
+}
+
+function DateSelect({
+  value,
+  onChange,
+  allowEmpty = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  allowEmpty?: boolean;
+}) {
+  const years = monthSelectYears();
+  const [year = "", month = "", day = ""] = value.split("-");
+  const effectiveYear = year || String(years[0]);
+  const effectiveMonth = month || "01";
+  const maxDay = daysInMonth(Number(effectiveYear), Number(effectiveMonth));
+  const effectiveDay = day ? String(Math.min(Number(day), maxDay)).padStart(2, "0") : "01";
+  const days = Array.from({ length: maxDay }, (_, index) =>
+    String(index + 1).padStart(2, "0"),
+  );
+
+  function updateDate(nextYear: string, nextMonth: string, nextDay: string) {
+    if (allowEmpty && !nextYear && !nextMonth && !nextDay) {
+      onChange("");
+      return;
+    }
+    const yearValue = nextYear || String(years[0]);
+    const monthValue = nextMonth || "01";
+    const monthMaxDay = daysInMonth(Number(yearValue), Number(monthValue));
+    const dayValue = String(Math.min(Number(nextDay || "1"), monthMaxDay)).padStart(2, "0");
+    onChange(`${yearValue}-${monthValue}-${dayValue}`);
+  }
+
+  return (
+    <div className="grid min-w-0 grid-cols-3 gap-2">
+      <select
+        required={!allowEmpty}
+        aria-label="年份"
+        className={fieldClassName}
+        value={year}
+        onChange={(event) => updateDate(event.target.value, effectiveMonth, effectiveDay)}
+      >
+        {allowEmpty ? (
+          <option value="">年</option>
+        ) : null}
+        {years.map((item) => (
+          <option key={item} value={String(item)}>
+            {item} 年
+          </option>
+        ))}
+      </select>
+      <select
+        required={!allowEmpty}
+        aria-label="月份"
+        className={fieldClassName}
+        value={month}
+        onChange={(event) => updateDate(effectiveYear, event.target.value, effectiveDay)}
+      >
+        {allowEmpty ? (
+          <option value="">月</option>
+        ) : null}
+        {MONTH_LABELS.map((label, index) => {
+          const monthValue = String(index + 1).padStart(2, "0");
+          return (
+            <option key={monthValue} value={monthValue}>
+              {label}
+            </option>
+          );
+        })}
+      </select>
+      <select
+        required={!allowEmpty}
+        aria-label="日期"
+        className={fieldClassName}
+        value={day}
+        onChange={(event) => updateDate(effectiveYear, effectiveMonth, event.target.value)}
+      >
+        {allowEmpty ? (
+          <option value="">日</option>
+        ) : null}
+        {days.map((item) => (
+          <option key={item} value={item}>
+            {Number(item)} 日
+          </option>
+        ))}
       </select>
     </div>
   );
@@ -203,14 +295,11 @@ export function BillForm({
         />
       </label>
 
-      <label className="block">
+      <label className="block min-w-0">
         <span className="mb-1 block text-sm font-medium text-stone-700">繳費期限</span>
-        <input
-          required
-          type="date"
-          className={fieldClassName}
+        <DateSelect
           value={values.due_date}
-          onChange={(event) => setValues({ ...values, due_date: event.target.value })}
+          onChange={(due_date) => setValues({ ...values, due_date })}
         />
       </label>
 
@@ -232,13 +321,12 @@ export function BillForm({
       </div>
 
       {bill ? (
-        <label className="block">
+        <label className="block min-w-0">
           <span className="mb-1 block text-sm font-medium text-stone-700">繳費日期</span>
-          <input
-            type="date"
-            className={fieldClassName}
+          <DateSelect
+            allowEmpty
             value={values.paid_date}
-            onChange={(event) => setValues({ ...values, paid_date: event.target.value })}
+            onChange={(paid_date) => setValues({ ...values, paid_date })}
           />
         </label>
       ) : null}
