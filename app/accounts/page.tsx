@@ -2,20 +2,20 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { ApiError, listAccountsRequest, saveAccountsRequest } from "@/lib/api";
-import { ACCOUNT_LABELS, BILL_TYPE_LABELS, BILL_TYPES, type BillType } from "@/lib/types";
+import {
+  ACCOUNT_LABELS,
+  ACCOUNT_TYPES,
+  BILL_TYPE_LABELS,
+  isAccountType,
+  type AccountType,
+} from "@/lib/types";
 import { AppShell, PrimaryButton, PrimaryLink } from "@/components/app-shell";
 import { LiffGate, useLiff } from "@/components/liff-provider";
 
-type AccountFormValues = Record<BillType, string>;
+type AccountFormValues = Record<AccountType, string>;
 
 function emptyValues(): AccountFormValues {
-  return {
-    water: "",
-    electricity: "",
-    gas: "",
-    management: "",
-    other: "",
-  };
+  return Object.fromEntries(ACCOUNT_TYPES.map((type) => [type, ""])) as AccountFormValues;
 }
 
 function AccountsForm() {
@@ -36,7 +36,9 @@ function AccountsForm() {
         }
         const next = emptyValues();
         for (const account of result.accounts) {
-          next[account.type] = account.value;
+          if (isAccountType(account.type)) {
+            next[account.type] = account.value;
+          }
         }
         setValues(next);
         setLoaded(true);
@@ -62,12 +64,14 @@ function AccountsForm() {
       const result = await run((token) =>
         saveAccountsRequest(
           token,
-          BILL_TYPES.map((type) => ({ type, value: values[type] })),
+          ACCOUNT_TYPES.map((type) => ({ type, value: values[type] })),
         ),
       );
       const next = emptyValues();
       for (const account of result.accounts) {
-        next[account.type] = account.value;
+        if (isAccountType(account.type)) {
+          next[account.type] = account.value;
+        }
       }
       setValues(next);
       setSaved(true);
@@ -94,7 +98,7 @@ function AccountsForm() {
         這些號碼每期共用。繳費時到帳單頁即可複製，不必每月重填。
       </p>
 
-      {BILL_TYPES.map((type) => (
+      {ACCOUNT_TYPES.map((type) => (
         <label key={type} className="block">
           <span className="mb-1 block text-sm font-medium text-stone-700">
             {ACCOUNT_LABELS[type]}

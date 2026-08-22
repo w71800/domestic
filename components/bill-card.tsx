@@ -7,6 +7,9 @@ const TYPE_CLASS: Record<BillType, string> = {
   electricity: "bg-amber-100 text-amber-900",
   gas: "bg-orange-100 text-orange-900",
   management: "bg-teal-100 text-teal-900",
+  credit_card: "bg-indigo-100 text-indigo-800",
+  rent: "bg-rose-100 text-rose-800",
+  phone: "bg-violet-100 text-violet-800",
   other: "bg-stone-200 text-stone-800",
 };
 

@@ -1,14 +1,6 @@
 import { HttpError } from "@/lib/http";
 import { getSupabase } from "@/lib/supabase";
-import {
-  BILL_TYPES,
-  type BillType,
-  type HouseholdAccount,
-} from "@/lib/types";
-
-function isBillType(value: unknown): value is BillType {
-  return typeof value === "string" && (BILL_TYPES as readonly string[]).includes(value);
-}
+import { isAccountType, type AccountType, type HouseholdAccount } from "@/lib/types";
 
 export function parseAccountValue(value: unknown): string | null {
   if (value === null || value === undefined) {
@@ -29,7 +21,7 @@ export function parseAccountValue(value: unknown): string | null {
   return trimmed;
 }
 
-export function parseAccountInputs(body: unknown): Array<{ type: BillType; value: string | null }> {
+export function parseAccountInputs(body: unknown): Array<{ type: AccountType; value: string | null }> {
   if (!body || typeof body !== "object") {
     throw new HttpError(400, "資料格式不正確");
   }
@@ -39,15 +31,15 @@ export function parseAccountInputs(body: unknown): Array<{ type: BillType; value
     throw new HttpError(400, "請提供戶號列表");
   }
 
-  const seen = new Set<BillType>();
-  const parsed: Array<{ type: BillType; value: string | null }> = [];
+  const seen = new Set<AccountType>();
+  const parsed: Array<{ type: AccountType; value: string | null }> = [];
 
   for (const row of input.accounts) {
     if (!row || typeof row !== "object") {
       throw new HttpError(400, "戶號資料不正確");
     }
     const item = row as Record<string, unknown>;
-    if (!isBillType(item.type)) {
+    if (typeof item.type !== "string" || !isAccountType(item.type)) {
       throw new HttpError(400, "繳費類型不正確");
     }
     if (seen.has(item.type)) {
@@ -77,11 +69,11 @@ export async function listAccounts(householdId: string): Promise<HouseholdAccoun
 
 export async function saveAccounts(
   householdId: string,
-  inputs: Array<{ type: BillType; value: string | null }>,
+  inputs: Array<{ type: AccountType; value: string | null }>,
 ): Promise<HouseholdAccount[]> {
   const supabase = getSupabase();
   const toUpsert = inputs
-    .filter((item): item is { type: BillType; value: string } => item.value !== null)
+    .filter((item): item is { type: AccountType; value: string } => item.value !== null)
     .map((item) => ({
       household_id: householdId,
       type: item.type,
