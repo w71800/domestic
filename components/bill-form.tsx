@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { dateToMonth, monthToDate, todayInTaipei } from "@/lib/dates";
+import { addDays, dateToMonth, monthToDate, todayInTaipei } from "@/lib/dates";
 import { scanQrFromCamera } from "@/lib/liff";
 import { BILL_TYPE_LABELS, BILL_TYPES, type Bill, type BillType } from "@/lib/types";
 import { isHttpUrl } from "@/lib/urls";
@@ -195,7 +195,7 @@ function fromBill(bill?: Bill): BillFormValues {
   return {
     type: bill?.type ?? "electricity",
     amount: bill ? String(bill.amount) : "",
-    due_date: bill?.due_date ?? "",
+    due_date: bill?.due_date ?? addDays(todayInTaipei(), 4),
     period_start: bill ? dateToMonth(bill.period_start) : thisMonth,
     period_end: bill ? dateToMonth(bill.period_end) : thisMonth,
     notes: bill?.notes ?? "",
