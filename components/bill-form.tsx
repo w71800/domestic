@@ -7,6 +7,86 @@ import { BILL_TYPE_LABELS, BILL_TYPES, type Bill, type BillType } from "@/lib/ty
 import { isHttpUrl } from "@/lib/urls";
 import { PrimaryButton, SecondaryButton } from "@/components/app-shell";
 
+const MONTH_LABELS = [
+  "1 月",
+  "2 月",
+  "3 月",
+  "4 月",
+  "5 月",
+  "6 月",
+  "7 月",
+  "8 月",
+  "9 月",
+  "10 月",
+  "11 月",
+  "12 月",
+] as const;
+
+const fieldClassName =
+  "box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base";
+
+function monthSelectYears(): number[] {
+  const currentYear = Number(todayInTaipei().slice(0, 4));
+  const years: number[] = [];
+  for (let year = currentYear - 5; year <= currentYear + 2; year += 1) {
+    years.push(year);
+  }
+  return years;
+}
+
+function MonthSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [year = "", month = ""] = value.split("-");
+  const years = monthSelectYears();
+
+  function updateYear(nextYear: string) {
+    onChange(`${nextYear}-${month || "01"}`);
+  }
+
+  function updateMonth(nextMonth: string) {
+    onChange(`${year || String(years[0])}-${nextMonth}`);
+  }
+
+  return (
+    <div className="grid min-w-0 grid-cols-2 gap-2">
+      <select
+        required
+        aria-label="年份"
+        className={fieldClassName}
+        value={year}
+        onChange={(event) => updateYear(event.target.value)}
+      >
+        {years.map((item) => (
+          <option key={item} value={String(item)}>
+            {item} 年
+          </option>
+        ))}
+      </select>
+      <select
+        required
+        aria-label="月份"
+        className={fieldClassName}
+        value={month}
+        onChange={(event) => updateMonth(event.target.value)}
+      >
+        {MONTH_LABELS.map((label, index) => {
+          const monthValue = String(index + 1).padStart(2, "0");
+          return (
+            <option key={monthValue} value={monthValue}>
+              {label}
+            </option>
+          );
+        })}
+      </select>
+    </div>
+  );
+}
+
 export type BillFormValues = {
   type: BillType;
   amount: string;
@@ -98,7 +178,7 @@ export function BillForm({
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-stone-700">類型</span>
         <select
-          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className={fieldClassName}
           value={values.type}
           onChange={(event) =>
             setValues({ ...values, type: event.target.value as BillType })
@@ -117,7 +197,7 @@ export function BillForm({
         <input
           required
           inputMode="numeric"
-          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className={fieldClassName}
           value={values.amount}
           onChange={(event) => setValues({ ...values, amount: event.target.value })}
         />
@@ -128,7 +208,7 @@ export function BillForm({
         <input
           required
           type="date"
-          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className={fieldClassName}
           value={values.due_date}
           onChange={(event) => setValues({ ...values, due_date: event.target.value })}
         />
@@ -137,26 +217,16 @@ export function BillForm({
       <div className="grid min-w-0 grid-cols-1 gap-4">
         <label className="block min-w-0">
           <span className="mb-1 block text-sm font-medium text-stone-700">計費起</span>
-          <input
-            required
-            type="month"
-            className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          <MonthSelect
             value={values.period_start}
-            onChange={(event) =>
-              setValues({ ...values, period_start: event.target.value })
-            }
+            onChange={(period_start) => setValues({ ...values, period_start })}
           />
         </label>
         <label className="block min-w-0">
           <span className="mb-1 block text-sm font-medium text-stone-700">計費迄</span>
-          <input
-            required
-            type="month"
-            className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          <MonthSelect
             value={values.period_end}
-            onChange={(event) =>
-              setValues({ ...values, period_end: event.target.value })
-            }
+            onChange={(period_end) => setValues({ ...values, period_end })}
           />
         </label>
       </div>
@@ -166,7 +236,7 @@ export function BillForm({
           <span className="mb-1 block text-sm font-medium text-stone-700">繳費日期</span>
           <input
             type="date"
-            className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+            className={fieldClassName}
             value={values.paid_date}
             onChange={(event) => setValues({ ...values, paid_date: event.target.value })}
           />
@@ -180,7 +250,7 @@ export function BillForm({
             type="url"
             inputMode="url"
             placeholder="https://"
-            className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+            className={fieldClassName}
             value={values.payment_url}
             onChange={(event) => setValues({ ...values, payment_url: event.target.value })}
           />
@@ -200,7 +270,7 @@ export function BillForm({
         <span className="mb-1 block text-sm font-medium text-stone-700">備註</span>
         <textarea
           rows={3}
-          className="box-border w-full min-w-0 max-w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base"
+          className={fieldClassName}
           value={values.notes}
           onChange={(event) => setValues({ ...values, notes: event.target.value })}
         />
