@@ -186,6 +186,23 @@ function reminderHeadline(bill: Bill): string {
   return "繳費提醒";
 }
 
+function primaryUriButton(label: string, uri: string) {
+  return {
+    type: "button",
+    style: "primary",
+    color: "#0f766e",
+    action: { type: "uri", label, uri },
+  };
+}
+
+function secondaryUriButton(label: string, uri: string) {
+  return {
+    type: "button",
+    style: "secondary",
+    action: { type: "uri", label, uri },
+  };
+}
+
 function toBillsMenuBubble(householdId: string): FlexBubble {
   return {
     type: "bubble",
@@ -214,25 +231,8 @@ function toBillsMenuBubble(householdId: string): FlexBubble {
       layout: "vertical",
       spacing: "sm",
       contents: [
-        {
-          type: "button",
-          style: "secondary",
-          action: {
-            type: "uri",
-            label: "查看帳單列表",
-            uri: liffUrl("/", householdId),
-          },
-        },
-        {
-          type: "button",
-          style: "primary",
-          color: "#0f766e",
-          action: {
-            type: "uri",
-            label: "新增帳單",
-            uri: liffUrl("/new", householdId),
-          },
-        },
+        secondaryUriButton("查看帳單列表", liffUrl("/", householdId)),
+        primaryUriButton("新增帳單", liffUrl("/new", householdId)),
       ],
     },
   };
@@ -240,77 +240,62 @@ function toBillsMenuBubble(householdId: string): FlexBubble {
 
 function toReminderBubble(bill: Bill): FlexBubble {
   const hasPayUrl = Boolean(bill.payment_url && isHttpUrl(bill.payment_url));
-  const footerButtons: Record<string, unknown>[] = [];
+  const detailUri = liffUrl(`/bills/${bill.id}`, bill.household_id);
+  const listUri = liffUrl("/", bill.household_id);
+  const footerButtons = [
+    ...(hasPayUrl ? [primaryUriButton("去繳費", bill.payment_url!)] : []),
+    hasPayUrl ? secondaryUriButton("查看這筆", detailUri) : primaryUriButton("查看這筆", detailUri),
+    secondaryUriButton("列表", listUri),
+  ];
 
-  if (hasPayUrl) {
-    footerButtons.push({
-      type: "button",
-      style: "primary",
-      color: "#0f766e",
-      action: {
-        type: "uri",
-        label: "去繳費",
-        uri: bill.payment_url!,
-      },
+  const notes = bill.notes?.trim();
+  const bodyContents: Record<string, unknown>[] = [
+    {
+      type: "text",
+      text: reminderHeadline(bill),
+      size: "sm",
+      color: "#888888",
+    },
+    {
+      type: "text",
+      text: BILL_TYPE_LABELS[bill.type],
+      weight: "bold",
+      size: "xl",
+      margin: "md",
+    },
+    {
+      type: "text",
+      text: `${formatAmount(bill.amount)} 元`,
+      size: "lg",
+      margin: "sm",
+    },
+    {
+      type: "text",
+      text: `期限 ${formatDate(bill.due_date)} · 計費 ${formatMonthRange(bill.period_start, bill.period_end)}`,
+      size: "sm",
+      color: "#666666",
+      wrap: true,
+      margin: "md",
+    },
+  ];
+
+  if (notes) {
+    bodyContents.push({
+      type: "text",
+      text: notes,
+      size: "sm",
+      color: "#888888",
+      wrap: true,
+      margin: "md",
     });
   }
-
-  footerButtons.push(
-    {
-      type: "button",
-      style: hasPayUrl ? "secondary" : "primary",
-      color: hasPayUrl ? undefined : "#0f766e",
-      action: {
-        type: "uri",
-        label: "查看這筆",
-        uri: liffUrl(`/bills/${bill.id}`, bill.household_id),
-      },
-    },
-    {
-      type: "button",
-      style: "secondary",
-      action: {
-        type: "uri",
-        label: "列表",
-        uri: liffUrl("/", bill.household_id),
-      },
-    },
-  );
 
   return {
     type: "bubble",
     body: {
       type: "box",
       layout: "vertical",
-      contents: [
-        {
-          type: "text",
-          text: reminderHeadline(bill),
-          size: "sm",
-          color: "#888888",
-        },
-        {
-          type: "text",
-          text: BILL_TYPE_LABELS[bill.type],
-          weight: "bold",
-          size: "xl",
-          margin: "md",
-        },
-        {
-          type: "text",
-          text: `${formatAmount(bill.amount)} 元`,
-          size: "lg",
-          margin: "sm",
-        },
-        {
-          type: "text",
-          text: `期限 ${formatDate(bill.due_date)} · 計費 ${formatMonthRange(bill.period_start, bill.period_end)}`,
-          size: "sm",
-          color: "#666666",
-          wrap: true,
-          margin: "md",
-        },
-      ],
+      contents: bodyContents,
     },
     footer: {
       type: "box",
